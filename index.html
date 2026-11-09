@@ -2209,7 +2209,12 @@
       <div style="font-size:12.5px; font-weight:700; color:#7A6510; letter-spacing:.06em; margin-bottom:10px">תובנות שנאספו עד כה</div>
       <div style="display:grid; gap:10px">
         <sc-for list="{{ insightsList }}" as="ins" hint-placeholder-count="1">
-          <div style="font-size:15px; line-height:1.55; color:#4A3F0A; text-wrap:pretty">{{ ins.text }}</div>
+          <div style="font-size:15px; line-height:1.55; color:#4A3F0A; text-wrap:pretty">
+            {{ ins.text }}
+            <sc-if value="{{ ins.hasLink }}" hint-placeholder-val="{{ false }}">
+              <a href="{{ ins.linkHref }}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:4px; font-size:13.5px; font-weight:700; color:#7A6510">{{ ins.linkLabel }} ↗</a>
+            </sc-if>
+          </div>
         </sc-for>
       </div>
     </div>
@@ -2389,30 +2394,28 @@ const EQUITY_LINK = "https://www.meitav.co.il/trade/capital_market_guide/how_do_
 const EQUITY_LINK_LABEL = "למה 100 פחות הגיל? קריאה נוספת";
 const LIFE_INSURANCE_LINK = "https://www.supermarker.themarker.com/BituachHaimRisk/CalculateLifeInsuranceSum.aspx";
 const LIFE_INSURANCE_LINK_LABEL = "איך מחשבים כמה ביטוח חיים צריך";
+const EMPLOYMENT_GAP_LINK = "https://www.kolzchut.org.il/he/%D7%A9%D7%9E%D7%99%D7%A8%D7%94_%D7%A2%D7%9C_%D7%A8%D7%A6%D7%A3_%D7%96%D7%9B%D7%95%D7%99%D7%95%D7%AA_%D7%A4%D7%A0%D7%A1%D7%99%D7%95%D7%A0%D7%99%D7%95%D7%AA_%D7%91%D7%9E%D7%94%D7%9C%D7%9A_%D7%94%D7%A4%D7%A1%D7%A7%D7%AA_%D7%A2%D7%91%D7%95%D7%93%D7%94";
+const EMPLOYMENT_GAP_LINK_LABEL = "שמירה על רצף זכויות פנסיוניות במהלך הפסקת עבודה";
+const EMPLOYMENT_GAP_DURATIONS = ["3to6", "6to12", "1to3", "gt3"];
 
 const REPORT_FINDINGS = [
   {
-    num: "03",
     title: "פיצויים",
     text: "אנו ממליצים שלא למשוך את כספי הפיצויים שנצברו, אלא לבצע רצף קצבה — כך משמרים את הפטור ממס ומגדילים את הקצבה החודשית העתידית."
   },
   {
-    num: "04",
     title: "ביטוח אובדן כושר עבודה",
     text: "אנו ממליצים לוודא שהכיסוי מפני אובדן כושר עבודה מותאם לשכר העדכני ולעיסוק בפועל, ולשקול מעבר להגדרה עיסוקית ספציפית."
   },
   {
-    num: "05",
     title: "רצף קצבה",
     text: "אנו ממליצים להגיש רצף קצבה על רכיב הפיצויים לרשות המסים ולגוף המנהל, במקום למשוך אותו במזומן — הפעולה ללא עלות ומגדילה את הפטור ממס בגיל פרישה."
   },
   {
-    num: "06",
     title: "קרן השתלמות",
     text: "אנו ממליצים להמשיך ולהפקיד לקרן ההשתלמות עד לתקרת ההטבה השנתית, ולהותיר את הכספים בקרן כרכיב חיסכון פטור ממס ולא כעתודת חירום שוטפת."
   },
   {
-    num: "07",
     title: "דמי ניהול",
     text: "אנו ממליצים לבחון מול הגוף המנהל הפחתה של דמי הניהול — פער של עשירית האחוז מהצבירה יכול להיות שקול לעשרות אלפי שקלים לאורך תקופת החיסכון."
   }
@@ -2555,13 +2558,20 @@ class Component extends DCLogic {
     const s = this.state;
     const list = [];
     if (s.kids > 0) {
-      list.push(
-        "יש לך " +
+      list.push({
+        text:
+          "יש לך " +
           (s.kids === 1 ? "ילד אחד" : s.kids + " ילדים") +
           " — לכן אנו ממליצים על ביטוח חיים (ריסק) בסך כ־" +
           this.fmt(LIFE_INSURANCE_PER_CHILD * s.kids) +
           ". בעמוד הסיכום שמחכה לך בסוף השאלון נדייק את ההמלצה הזו לפי כל מה שעוד תספר/י לנו."
-      );
+      });
+    }
+    if (s.employment === "none" && EMPLOYMENT_GAP_DURATIONS.indexOf(s.notWorkingSince) !== -1) {
+      list.push({
+        text:
+          "ציינת שאת/ה לא עובד/ת כבר תקופה ממושכת — לכן אנו ממליצים לבדוק כיצד לשמור על רצף הזכויות הפנסיוניות שלך, כדי לא לאבד ותק וכיסוי ביטוחי. בעמוד הסיכום שמחכה לך בסוף השאלון נרחיב על כך, כולל קישור למקור."
+      });
     }
     return list;
   }
@@ -2646,7 +2656,6 @@ class Component extends DCLogic {
     const lifeInsuranceRow =
       s.kids > 0
         ? {
-            num: "02",
             title: "ביטוח חיים",
             text:
               "אנו ממליצים על כיסוי ביטוח חיים (ריסק) בסך של כ־" +
@@ -2659,11 +2668,24 @@ class Component extends DCLogic {
             linkLabel: LIFE_INSURANCE_LINK_LABEL
           }
         : {
-            num: "02",
             title: "ביטוח חיים",
             text: "מכיוון שאין לך ילדים או תלויים כלכליים נוספים, אנו ממליצים שלא לרכוש ביטוח חיים (ריסק) בשלב זה.",
             hasLink: false
           };
+
+    const findingsRows = [lifeInsuranceRow];
+
+    if (s.employment === "none" && EMPLOYMENT_GAP_DURATIONS.indexOf(s.notWorkingSince) !== -1) {
+      findingsRows.push({
+        title: "רצף זכויות פנסיוניות",
+        text: "מכיוון שאת/ה לא עובד/ת כבר תקופה ממושכת, אנו ממליצים לבדוק כיצד לשמור על רצף הזכויות הפנסיוניות שלך — כדי לא לאבד ותק וכיסוי ביטוחי מפני מוות ואובדן כושר עבודה.",
+        hasLink: true,
+        linkHref: EMPLOYMENT_GAP_LINK,
+        linkLabel: EMPLOYMENT_GAP_LINK_LABEL
+      });
+    }
+
+    findingsRows.push.apply(findingsRows, REPORT_FINDINGS);
 
     const hasSpouse = s.marital === "married" || s.marital === "partner";
     const hasKids = s.kids > 0;
@@ -2682,19 +2704,22 @@ class Component extends DCLogic {
     if (!hasSpouse && !hasKids && s.marital !== "divorced") {
       beneficiariesParts.push("עדכנו אותם בכל שינוי משמעותי במצב המשפחתי שלכם.");
     }
-    const beneficiariesRow = {
-      num: "08",
+    findingsRows.push({
       title: "מוטבים",
       text: beneficiariesParts.join(" "),
       hasLink: false
-    };
+    });
+
+    findingsRows.forEach((row, i) => {
+      row.num = String(i + 2).padStart(2, "0");
+    });
 
     return {
       reportDate: this.props.reportDate ?? "יולי 2026",
       clientName: this.props.clientName ?? "דוח תכנון פנסיוני",
       headline:
         this.props.headline ??
-        "אספנו את מה שסיפרת לנו בשאלון וריכזנו כאן שמונה נושאים מרכזיים, כל אחד עם המלצה כללית אחת שכדאי להעלות בפגישה הבאה שלך עם היועץ הפנסיוני.",
+        "אספנו את מה שסיפרת לנו בשאלון וריכזנו כאן את הנושאים המרכזיים הרלוונטיים אליך, כל אחד עם המלצה כללית אחת שכדאי להעלות בפגישה הבאה שלך עם היועץ הפנסיוני.",
       facts: [
         { label: "גיל", value: String(s.age) },
         { label: "שנים עד פרישה", value: String(yearsToRetirement) },
@@ -2708,7 +2733,7 @@ class Component extends DCLogic {
         "אחוז החשיפה למניות נגזר מטווח הזמן עד הפרישה, מהצורך בנזילות ומיכולת הספיגה של ירידות. ככל שהטווח ארוך יותר, החשיפה המומלצת גבוהה יותר — לפי כלל אצבע מקובל של 100 פחות הגיל.",
       equityLink: EQUITY_LINK,
       equityLinkLabel: EQUITY_LINK_LABEL,
-      findingsRows: [lifeInsuranceRow].concat(REPORT_FINDINGS).concat([beneficiariesRow])
+      findingsRows: findingsRows
     };
   }
 
@@ -2725,7 +2750,7 @@ class Component extends DCLogic {
       stepNum: s.step + 1,
       stepTotal: STEPS.length,
       progress: Math.round((s.step / last) * 100) + "%",
-      insightsList: insights.map((text, i) => ({ text, key: i })),
+      insightsList: insights.map((ins, i) => ({ text: ins.text, hasLink: !!ins.hasLink, linkHref: ins.linkHref, linkLabel: ins.linkLabel, key: i })),
       hasInsights: s.step > 0 && insights.length > 0,
       stepKicker: step.kicker,
       stepTitle: step.title,
